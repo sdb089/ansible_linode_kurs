@@ -1,0 +1,60 @@
+---
+
+- hosts: all
+  vars:
+    ADMIN_USER_NAME: 'stef'
+    NORMAL_USER_NAME: 'sdoe'
+    ADM_WORD: '$6$cwUGIGHXlI9hY$nt.j8D0i6z46CIc0rLj7jKiW79yH8XGVk1YTlogTp4dPqlaiytHELGnmBpc/ekNYc7As/gLGPEzWceGii2//T0'
+    NOR_WORD: '$6$cwUGIGHXlI9hY$nt.j8D0i6z46CIc0rLj7jKiW79yH8XGVk1YTlogTp4dPqlaiytHELGnmBpc/ekNYc7As/gLGPEzWceGii2//T0'
+
+  tasks:
+
+  - name: create a Admin user
+    user:
+      name: "{{ ADMIN_USER_NAME }}"
+      password: "{{ ADM_WORD }}"
+      shell: /bin/bash
+
+  - name: create a Normal user
+    user:
+      name: "{{ NORMAL_USER_NAME }}"
+      password: "{{ NOR_WORD }}"
+      shell: /bin/bash
+
+
+  - name: addkey to the Admin
+    authorized_key:
+      user: "{{ ADMIN_USER_NAME }}"
+      state: present
+      key: "{{ lookup('file', '~/.ssh/ansible.pub') }}"
+
+  - name: addkey to the Normal
+    authorized_key:
+      user: "{{ NORMAL_USER_NAME }}"
+      state: present
+      key: "{{ lookup('file', '~/.ssh/ansible.pub') }}"
+
+
+  - name: add the Admin user to sudoers
+    lineinfile:
+      dest: /etc/sudoers
+      regexp: "{{ ADMIN_USER_NAME }} ALL"
+      line: "{{ ADMIN_USER_NAME }} ALL=(ALL) ALL"
+      state: present
+
+
+- hosts: nginx
+  tasks:
+    - name: install nginx
+      package:
+        name: nginx
+        state: latest
+
+- hosts: wordpress
+  tasks:
+    - name: install apache
+      package:
+        name: apache2
+        state: latest
+
+...
